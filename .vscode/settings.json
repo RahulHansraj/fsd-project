@@ -1,0 +1,10 @@
+{
+  "appService.zipIgnorePattern": [
+    "node_modules{,/**}",
+    ".git{,/**}",
+    ".env.local",
+    "fsd-ppt{,/**}",
+    "*.pptx"
+  ],
+  "appService.showSavePrompt": false
+}
