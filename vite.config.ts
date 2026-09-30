@@ -57,13 +57,23 @@ function secureAiProxyPlugin(apiKey: string, modelName: string): Plugin {
               }
             }
 
-            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`
+            const candidateModels = ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.7-flash']
+            let response = null
+            let usedModel = candidateModels[0]
 
-            const response = await fetch(geminiUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(geminiPayload)
-            }).catch(() => null)
+            for (const mName of candidateModels) {
+              const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${mName}:generateContent?key=${apiKey}`
+              response = await fetch(geminiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(geminiPayload)
+              }).catch(() => null)
+
+              if (response && response.ok) {
+                usedModel = mName
+                break
+              }
+            }
 
             if (response && response.ok) {
               const data = await response.json()
@@ -78,7 +88,7 @@ function secureAiProxyPlugin(apiKey: string, modelName: string): Plugin {
                     }
                   }
                 ],
-                model: modelName,
+                model: usedModel,
                 reply: extractedText
               }
 

@@ -92,13 +92,23 @@ async function handleAiProxy(req, res) {
         }
       }
 
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${SECURE_AI_MODEL}:generateContent?key=${SECURE_AI_KEY}`
+      const candidateModels = ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.7-flash']
+      let response = null
+      let usedModel = candidateModels[0]
 
-      const response = await fetch(geminiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(geminiPayload)
-      }).catch(() => null)
+      for (const modelName of candidateModels) {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${SECURE_AI_KEY}`
+        response = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(geminiPayload)
+        }).catch(() => null)
+
+        if (response && response.ok) {
+          usedModel = modelName
+          break
+        }
+      }
 
       if (response && response.ok) {
         const data = await response.json()
@@ -113,7 +123,7 @@ async function handleAiProxy(req, res) {
               }
             }
           ],
-          model: SECURE_AI_MODEL,
+          model: usedModel,
           reply: extractedText
         }
 
