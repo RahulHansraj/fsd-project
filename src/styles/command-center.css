@@ -444,6 +444,11 @@ button, input { font: inherit; } button { border: 0; cursor: pointer; } button:f
 .chat-bubble-wrap.user { justify-content: flex-end; }
 .chat-bubble-wrap.assistant { justify-content: flex-start; }
 .chat-bubble { max-width: 86%; padding: 11px 14px; border-radius: 8px; font-size: 11px; line-height: 1.5; }
+.chat-formatted-body { display: flex; flex-direction: column; gap: 6px; }
+.chat-p-row { margin: 0; line-height: 1.5; }
+.chat-header-row { margin-top: 6px; font-weight: 700; color: #143e35; font-size: 11px; }
+.chat-bullet-row { display: flex; gap: 6px; align-items: flex-start; margin-left: 2px; line-height: 1.45; }
+.bullet-symbol { color: #28604d; font-weight: 700; flex-shrink: 0; }
 .chat-bubble-wrap.user .chat-bubble { background: #174e47; color: #fff; border-bottom-right-radius: 2px; }
 .chat-bubble-wrap.assistant .chat-bubble { background: #f0f6eb; color: #1b3830; border: 1px solid #dce4da; border-bottom-left-radius: 2px; }
 .chat-time { margin-top: 4px; font: 400 8px 'DM Mono', monospace; opacity: 0.65; text-align: right; }

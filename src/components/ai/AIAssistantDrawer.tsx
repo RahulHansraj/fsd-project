@@ -55,6 +55,64 @@ const suggestedPrompts = [
   "Summarize MRF sorting plant health"
 ]
 
+function renderCleanContent(text: string) {
+  if (!text) return null
+
+  // Clean out triple quotes or markdown block markers
+  let cleaned = text.replace(/^["'`]{1,3}|["'`]{1,3}$/g, '').trim()
+
+  // Split into lines/blocks
+  const rawLines = cleaned.split('\n').map(l => l.trim()).filter(Boolean)
+
+  return (
+    <div className="chat-formatted-body">
+      {rawLines.map((line, idx) => {
+        // Remove header hashes (e.g. ###, ##)
+        const isHeader = /^#{1,6}\s*/.test(line)
+        let lineText = line.replace(/^#{1,6}\s*/, '')
+
+        // Detect and clean bullet points (* or - or 1.)
+        const isBullet = /^[*-]\s+|\d+\.\s+/.test(lineText)
+        if (isBullet) {
+          lineText = lineText.replace(/^[*-]\s+|\d+\.\s+/, '')
+        }
+
+        // Parse **bold** syntax
+        const parts = lineText.split(/(\*\*[^*]+\*\*)/g)
+        const parsedNodes = parts.map((part, pIdx) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={pIdx}>{part.slice(2, -2)}</strong>
+          }
+          return part
+        })
+
+        if (isHeader) {
+          return (
+            <div key={idx} className="chat-header-row">
+              <strong>{parsedNodes}</strong>
+            </div>
+          )
+        }
+
+        if (isBullet) {
+          return (
+            <div key={idx} className="chat-bullet-row">
+              <span className="bullet-symbol">•</span>
+              <span>{parsedNodes}</span>
+            </div>
+          )
+        }
+
+        return (
+          <p key={idx} className="chat-p-row">
+            {parsedNodes}
+          </p>
+        )
+      })}
+    </div>
+  )
+}
+
 export function AIAssistantDrawer({
   isOpen,
   onClose,
@@ -142,7 +200,7 @@ export function AIAssistantDrawer({
           <div>
             <strong>CivicCycle Operations Assistant</strong>
             <small className="ai-model-tag">
-              <Cpu size={10} /> {isConfigLive ? 'Google Gemini 3.8 Flash AI · Online' : 'Gemini AI Assistant'}
+              <Cpu size={10} /> Operational Intelligence · Online
             </small>
           </div>
         </div>
@@ -158,7 +216,7 @@ export function AIAssistantDrawer({
           {messages.map((msg) => (
             <div key={msg.id} className={`chat-bubble-wrap ${msg.sender}`}>
               <div className="chat-bubble">
-                <p>{msg.text}</p>
+                {renderCleanContent(msg.text)}
                 <div className="chat-meta-foot">
                   <span className="chat-time">{msg.time}</span>
                   {msg.isLiveLLM && (
