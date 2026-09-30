@@ -6,12 +6,27 @@ import { fileURLToPath } from 'node:url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+const envPath = path.join(__dirname, '.env')
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8')
+  for (const line of envContent.split('\n')) {
+    const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/)
+    if (match) {
+      const key = match[1]
+      let value = match[2] || ''
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1)
+      }
+      process.env[key] = value.trim()
+    }
+  }
+}
+
 const PORT = process.env.PORT || 8080
 const DIST_DIR = path.join(__dirname, 'dist')
 
-const SECURE_AI_KEY = process.env.AZURE_AI_KEY || ''
-const SECURE_AI_ENDPOINT = process.env.AZURE_AI_ENDPOINT || 'https://hanserr-resource.services.ai.azure.com/openai/v1/responses'
-const SECURE_AI_MODEL = process.env.AZURE_AI_MODEL || 'gpt-5-nano'
+const SECURE_AI_KEY = process.env.GEMINI_API_KEY || ''
+const SECURE_AI_MODEL = 'gemini-3.8-flash'
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=UTF-8',
@@ -47,96 +62,72 @@ async function handleAiProxy(req, res) {
       const body = rawBody ? JSON.parse(rawBody) : {}
       const isTest = req.url?.includes('/test')
 
-      const model = body.model || SECURE_AI_MODEL
       const messages = body.messages || [
         { role: 'system', content: 'You are CivicCycle Operations Copilot for San Francisco zero-waste operations.' },
         { role: 'user', content: 'Hello' }
       ]
 
-      const chatCompletionsUrl = SECURE_AI_ENDPOINT.includes('/responses')
-        ? SECURE_AI_ENDPOINT.replace('/responses', '/chat/completions')
-        : SECURE_AI_ENDPOINT
-      const responsesUrl = SECURE_AI_ENDPOINT.includes('/chat/completions')
-        ? SECURE_AI_ENDPOINT.replace('/chat/completions', '/responses')
-        : SECURE_AI_ENDPOINT
+      const contents = []
+      let systemInstructionText = ''
 
-      const headers = {
-        'Content-Type': 'application/json',
-        'api-key': SECURE_AI_KEY,
-        'Authorization': `Bearer ${SECURE_AI_KEY}`
+      for (const m of messages) {
+        if (m.role === 'system') {
+          systemInstructionText += (systemInstructionText ? '\n\n' : '') + m.content
+        } else {
+          contents.push({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }]
+          })
+        }
       }
 
-      const requestedTokens = Number(body.max_completion_tokens || body.max_tokens || 16384)
-      const tokenLimit = Math.min(128000, Math.max(1000, requestedTokens))
-
-      const chatPayload = {
-        model,
-        messages,
-        max_completion_tokens: isTest ? 1000 : tokenLimit
+      if (contents.length === 0) {
+        contents.push({ role: 'user', parts: [{ text: 'Hello' }] })
       }
 
-      let response = await fetch(chatCompletionsUrl, {
+      const geminiPayload = { contents }
+      if (systemInstructionText) {
+        geminiPayload.system_instruction = {
+          parts: [{ text: systemInstructionText }]
+        }
+      }
+
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${SECURE_AI_MODEL}:generateContent?key=${SECURE_AI_KEY}`
+
+      const response = await fetch(geminiUrl, {
         method: 'POST',
-        headers,
-        body: JSON.stringify(chatPayload)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(geminiPayload)
       }).catch(() => null)
-
-      if (!response || !response.ok) {
-        const responsesPayload = {
-          model,
-          input: messages
-        }
-        const respRes = await fetch(responsesUrl, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(responsesPayload)
-        }).catch(() => null)
-        if (respRes && respRes.ok) {
-          response = respRes
-        }
-      }
 
       if (response && response.ok) {
         const data = await response.json()
-        let extractedText = ''
-        if (Array.isArray(data.output)) {
-          for (const item of data.output) {
-            if (item.type === 'message' && Array.isArray(item.content)) {
-              for (const c of item.content) {
-                if (c.text) {
-                  extractedText = c.text
-                  break
-                }
-              }
-            }
-            if (extractedText) break
-          }
-        } else if (typeof data.output_text === 'string') {
-          extractedText = data.output_text
-        }
+        const extractedText = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
 
-        if (extractedText && (!data.choices || !data.choices[0])) {
-          data.choices = [
+        const outputData = {
+          choices: [
             {
               message: {
                 role: 'assistant',
                 content: extractedText
               }
             }
-          ]
+          ],
+          model: SECURE_AI_MODEL,
+          reply: extractedText
         }
 
         res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify(data))
+        res.end(JSON.stringify(outputData))
         return
       }
 
       const errStatus = response ? response.status : 500
-      const errText = response ? await response.text().catch(() => '') : 'Remote connection failed'
+      const errText = response ? await response.text().catch(() => '') : 'Gemini AI connection failed'
 
       res.writeHead(errStatus, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({
-        error: 'Azure AI Gateway Error',
+        error: 'Google Gemini AI Gateway Error',
         status: errStatus,
         details: errText.slice(0, 300)
       }))

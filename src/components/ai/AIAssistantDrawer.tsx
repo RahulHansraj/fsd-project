@@ -135,19 +135,17 @@ export function AIAssistantDrawer({
   }
 
   return (
-    <>
-      <div className="drawer-scrim" onClick={onClose} />
-      <aside className="ai-drawer">
-        <div className="drawer-head">
-          <div className="drawer-title">
-            <span className="badge-ai-icon"><Sparkles size={16} /></span>
-            <div>
-              <strong>CivicCycle Operations Copilot</strong>
-              <small className="ai-model-tag">
-                <Cpu size={10} /> {isConfigLive ? 'Operational Intelligence · Online' : 'Baseline Operations'}
-              </small>
-            </div>
+    <aside className="ai-drawer" style={{ resize: 'none' }}>
+      <div className="drawer-head">
+        <div className="drawer-title">
+          <span className="badge-ai-icon"><Sparkles size={16} /></span>
+          <div>
+            <strong>CivicCycle Operations Assistant</strong>
+            <small className="ai-model-tag">
+              <Cpu size={10} /> {isConfigLive ? 'Google Gemini 3.8 Flash AI · Online' : 'Gemini AI Assistant'}
+            </small>
           </div>
+        </div>
           <div className="drawer-head-actions">
             <button className="close-btn" onClick={onClose} aria-label="Close assistant">
               <X size={18} />
@@ -228,6 +226,5 @@ export function AIAssistantDrawer({
           </button>
         </div>
       </aside>
-    </>
   )
 }

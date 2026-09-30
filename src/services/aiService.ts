@@ -51,11 +51,11 @@ try {
 // Default credentials pre-configured securely with 128k context capacity
 // Credentials are kept encrypted internally on the server-side proxy
 export const DEFAULT_AI_CONFIG: AIConfig = {
-  provider: 'azure-foundry',
+  provider: 'custom',
   endpoint: '/api/ai/chat',
   apiKey: '', // Handled server-side only; never exposed to frontend
-  model: 'gpt-5-nano',
-  apiVersion: '2024-02-15-preview',
+  model: 'gemini-3.8-flash',
+  apiVersion: 'v1beta',
   temperature: 0.3,
   maxCompletionTokens: 16384,
   contextWindowTokens: 128000,
