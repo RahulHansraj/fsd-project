@@ -267,7 +267,7 @@ export default function LoginPage() {
               <label className="checkbox-label">
                 <input type="checkbox" defaultChecked />
                 <span className="checkmark" />
-                Keep session authenticated (MongoDB Cloud Sync)
+                Keep me signed in
               </label>
             </div>
 
@@ -290,15 +290,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          <div className="form-divider">
-            <span>secure access</span>
-          </div>
-
-          <div className="security-guarantee">
-            <Shield size={14} />
-            <span>256-Bit TLS Encryption • Azure & MongoDB Atlas Protected</span>
-          </div>
         </div>
       </section>
     </div>
