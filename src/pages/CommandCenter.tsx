@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   AlertTriangle,
   ArrowRight,
@@ -21,6 +22,7 @@ import {
   Globe2,
   Layers3,
   LineChart,
+  LogOut,
   Map,
   MapPin,
   Menu,
@@ -76,8 +78,21 @@ import { RadioDispatchModal } from '../components/audio/RadioDispatchModal'
 import { TrendChartsModal } from '../components/analytics/TrendChartsModal'
 import { Municipality, mockMunicipalities } from '../data/mockMunicipalities'
 import { MunicipalityModal } from '../components/modals/MunicipalityModal'
+import { authService } from '../services/authService'
 
 export default function CommandCenter() {
+  const navigate = useNavigate()
+  const [currentUser] = useState(() => authService.getUser() || {
+    name: 'Jordan Smith',
+    role: 'Operations Lead',
+    avatar: 'JS'
+  })
+
+  const handleLogout = () => {
+    authService.logout()
+    navigate('/login')
+  }
+
   // Navigation & View State
   const [activeTab, setActiveTab] = useState<NavigationTab>('command-center')
   const [activeMunicipality, setActiveMunicipality] = useState<Municipality>(mockMunicipalities[0])
@@ -292,12 +307,19 @@ export default function CommandCenter() {
 
         <div className="cc-sidebar-foot">
           <div className="cc-profile">
-            <div>JS</div>
+            <div>{currentUser.avatar || 'JS'}</div>
             <span>
-              <strong>Jordan Smith</strong>
-              <small>Operations Lead</small>
+              <strong>{currentUser.name}</strong>
+              <small>{currentUser.role}</small>
             </span>
-            <MoreHorizontal size={18} />
+            <button 
+              className="cc-logout-btn" 
+              onClick={handleLogout} 
+              title="Sign Out to Login Page"
+              aria-label="Sign out"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
       </aside>

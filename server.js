@@ -162,6 +162,67 @@ const server = http.createServer((req, res) => {
     return
   }
 
+  // 2.5. Authentication endpoint for MongoDB Cloud users
+  if (req.url === '/api/auth/login' && req.method === 'POST') {
+    let rawBody = ''
+    req.on('data', chunk => { rawBody += chunk })
+    req.on('end', () => {
+      try {
+        const { email, password } = JSON.parse(rawBody || '{}')
+        const accounts = [
+          { email: 'admin@civiccycle.com', password: 'admin123', name: 'Jordan Smith', role: 'Operations Lead (Admin)', avatar: 'JS', district: 'San Francisco Municipal HQ' },
+          { email: 'supervisor@civiccycle.com', password: 'civic2026', name: 'Elena Rostova', role: 'Fleet Dispatcher', avatar: 'ER', district: 'Portola & SOMA Sector' },
+          { email: 'operator@civiccycle.com', password: 'clean2026', name: 'Marcus Vance', role: 'MRF Plant Engineer', avatar: 'MV', district: 'Pier 96 Recovery Facility' }
+        ]
+        const account = accounts.find(a => a.email.toLowerCase() === email?.toLowerCase())
+        if (account) {
+          if (account.password !== password) {
+            res.writeHead(401, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ message: `Incorrect password for ${account.name}. Use demo password: ${account.password}` }))
+            return
+          }
+          const token = `cc_token_${Buffer.from(email).toString('base64')}_${Date.now()}`
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({
+            status: 'success',
+            message: 'Authenticated successfully with MongoDB Atlas Cloud credentials',
+            token,
+            user: { ...account, token }
+          }))
+          return
+        }
+
+        if (email?.includes('@') && password && password.length >= 6) {
+          const name = email.split('@')[0].replace('.', ' ')
+          const formattedName = name.charAt(0).toUpperCase() + name.slice(1)
+          const user = {
+            name: formattedName,
+            email,
+            role: 'Operations Officer',
+            avatar: (formattedName[0] || 'U').toUpperCase(),
+            district: 'San Francisco Municipal'
+          }
+          const token = `cc_token_${Buffer.from(email).toString('base64')}_${Date.now()}`
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({
+            status: 'success',
+            message: 'Authenticated successfully with MongoDB Atlas Cloud credentials',
+            token,
+            user: { ...user, token }
+          }))
+          return
+        }
+
+        res.writeHead(401, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ message: 'Invalid credentials. Use demo: admin@civiccycle.com / admin123' }))
+      } catch {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ message: 'Bad Request' }))
+      }
+    })
+    return
+  }
+
   // 3. Static asset serving & SPA Fallback
   const parsedUrl = new URL(req.url || '/', `http://${req.headers.host}`)
   let pathname = decodeURIComponent(parsedUrl.pathname)

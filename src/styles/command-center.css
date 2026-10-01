@@ -4689,4 +4689,24 @@ button.cc-city:hover .city-chevron {
   }
 }
 
+/* Sidebar Logout Button */
+.cc-logout-btn {
+  margin-left: auto;
+  background: transparent;
+  color: #8da49c;
+  display: grid;
+  place-items: center;
+  padding: 6px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cc-logout-btn:hover {
+  background: rgba(226, 118, 85, 0.22);
+  color: #e27655;
+  transform: scale(1.08);
+}
+
+
 
